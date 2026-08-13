@@ -15,7 +15,7 @@ st.title("💻 ChatBot Pensamiento Computacional - FACET")
 st.markdown("""
 ### 🧠 Asistente diario
 **Desarrollado por:** Matteo, Lizárraga y Ruiz  
-*Modelo activo:* `gemini-2.5-pro`
+*Modelo activo:* `gemini-3.5-flash-lite`
 
 """)
 
@@ -41,7 +41,7 @@ if "GEMINI_API_KEY" not in st.secrets or not st.secrets["GEMINI_API_KEY"]:
 
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 client = genai.Client(api_key=GEMINI_API_KEY)
-MODELO_NOMBRE = "gemini-2.5-pro"
+MODELO_NOMBRE = "gemini-3.5-flash-lite"
 
 # 4. Instrucción del Sistema Base
 SYSTEM_INSTRUCTION_BASE = """
