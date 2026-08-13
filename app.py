@@ -19,21 +19,31 @@ st.markdown("""
 
 """)
 
-# 2. Captura de ubicación GPS en la barra lateral
-st.sidebar.header("Ubicación GPS")
-st.sidebar.write("Haz clic para compartir tu ubicación:")
-location = streamlit_geolocation()
+# 2. Barra de herramientas: GPS, Cámara y Micrófono
+col_gps, col_cam, col_mic = st.columns([1, 1, 1])
 
-latitud = location.get("latitude") if location else None
-longitud = location.get("longitude") if location else None
+# --- GPS ---
+with col_gps:
+    location = streamlit_geolocation()
+    latitud = location.get("latitude") if location else None
+    longitud = location.get("longitude") if location else None
 
+# --- CÁMARA ---
+with col_cam:
+    with st.popover("📸 Sacar Foto"):
+        foto_capturada = st.camera_input("Toma una foto para enviarla al bot")
+
+# --- MICRÓFONO ---
+with col_mic:
+    with st.popover("🎙️ Dictado / Audio"):
+        audio_grabado = st.audio_input("Graba una nota de voz")
+
+# Mensaje de estado de las entradas
 if latitud and longitud:
-    st.sidebar.success(f"Ubicación activa:\nLat: {latitud:.4f}, Lon: {longitud:.4f}")
+    st.success(f"📍 **Ubicación activa:** Lat {latitud:.4f}, Lon {longitud:.4f}")
 else:
-    st.sidebar.warning("Ubicación no compartida.")
-    # Banner sugerente en la pantalla principal si aún no compartió la ubicación
-    st.info("💡 **Sugerencia:** Si deseas respuestas basadas en tu ubicación, recuerda hacer clic en **'📍 Ubicación GPS'** en el menú lateral de la izquierda.")
-
+    st.info("💡 Puedes compartir tu **GPS (⌖)**, tomar una **Foto (📸)** o grabar **Audio (🎙️)** desde los botones superiores.")
+    
 # 3. Validación de API Key desde los Secrets de Streamlit
 if "GEMINI_API_KEY" not in st.secrets or not st.secrets["GEMINI_API_KEY"]:
     st.error("⚠️ No se encontró la clave GEMINI_API_KEY en los Secrets de Streamlit. Por favor confígurala en los ajustes.")
@@ -65,14 +75,48 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 6. Entrada del usuario y generación de respuesta
-if prompt := st.chat_input("Escribe tu mensaje..."):
-    # Guardar y mostrar el mensaje del usuario
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+# 6. Entrada del usuario (Texto o envío con multimedia)
+prompt = st.chat_input("Escribe tu mensaje o consulta sobre la foto/audio...")
 
-    # Reconstruir el historial con tipos explícitos de Content
+# Disparar envío si hay texto, foto o audio nuevo
+if prompt or foto_capturada or audio_grabado:
+    
+    # Construcción de la parte multimedia del mensaje actual
+    partes_usuario = []
+    texto_a_mostrar = prompt if prompt else ""
+
+    if foto_capturada:
+        foto_bytes = foto_capturada.getvalue()
+        partes_usuario.append(types.Part.from_bytes(data=foto_bytes, mime_type="image/jpeg"))
+        texto_a_mostrar += "\n\n📷 *[Foto adjunta]*"
+
+    if audio_grabado:
+        audio_bytes = audio_grabado.getvalue()
+        mime_type = audio_grabado.type if audio_grabado.type else "audio/wav"
+        partes_usuario.append(types.Part.from_bytes(data=audio_bytes, mime_type=mime_type))
+        texto_a_mostrar += "\n\n🎙️ *[Audio de voz adjunto]*"
+
+    if prompt:
+        partes_usuario.append(types.Part.from_text(text=prompt))
+    elif not partes_usuario:
+        # Si presionó enter sin texto ni archivos
+        st.stop()
+
+    # Si solo mandó audio/foto sin texto en la caja, poner un texto genérico para el historial
+    if not texto_a_mostrar.strip():
+        texto_a_mostrar = "Mira/Escucha este contenido multimedia."
+        partes_usuario.append(types.Part.from_text(text=texto_a_mostrar))
+
+    # Guardar y mostrar el mensaje del usuario
+    st.session_state.messages.append({"role": "user", "content": texto_a_mostrar})
+    with st.chat_message("user"):
+        st.markdown(texto_a_mostrar)
+        if foto_capturada:
+            st.image(foto_capturada, width=300)
+        if audio_grabado:
+            st.audio(audio_grabado)
+
+    # Armar historial para Gemini
     contents = []
     for msg in st.session_state.messages:
         role = "user" if msg["role"] == "user" else "model"
@@ -80,8 +124,11 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
             role=role,
             parts=[types.Part.from_text(text=msg["content"])]
         ))
+    
+    # Reemplazar la última entrada con las partes reales que incluyen imágenes/audios en bytes
+    contents[-1] = types.Content(role="user", parts=partes_usuario)
 
-    # Incorporar información de ubicación en la instrucción si está activa
+    # Inyectar GPS en las instrucciones
     system_instruction_actual = SYSTEM_INSTRUCTION_BASE
     if latitud and longitud:
         system_instruction_actual += f"\n\n[INFORMACIÓN DE CONTEXTO REAL: La ubicación GPS del usuario es Latitud {latitud}, Longitud {longitud}]."
@@ -93,7 +140,7 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
         temperature=0.7
     )
 
-    # Respuesta en streaming con manejo de errores
+    # Generación de la respuesta
     with st.chat_message("assistant"):
         try:
             def response_generator():
@@ -109,6 +156,10 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
             full_response = st.write_stream(response_generator())
             st.session_state.messages.append({"role": "assistant", "content": full_response})
 
+        except APIError as e:
+            st.error(f"⚠️ Error en los servidores de Google Gemini: {e.message}")
+        except Exception as e:
+            st.error(f"⚠️ Error al conectar con el asistente: {str(e)}")
         except APIError as e:
             st.error(f"⚠️ Error en los servidores de Google Gemini: {e.message}")
         except Exception as e:
