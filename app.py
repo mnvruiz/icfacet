@@ -1,6 +1,7 @@
 import streamlit as st
 from google import genai
 from google.genai import types
+from streamlit_geolocation import streamlit_geolocation
 
 # 1. Configuración de la página
 st.set_page_config(
@@ -17,6 +18,19 @@ st.markdown("""
 
 """)
 
+# Captura de ubicación GPS en la barra lateral
+st.sidebar.header("📍 Ubicación GPS")
+st.sidebar.write("Haz clic para compartir tu ubicación:")
+location = streamlit_geolocation()
+
+latitud = location.get("latitude") if location else None
+longitud = location.get("longitude") if location else None
+
+if latitud and longitud:
+    st.sidebar.success(f"Ubicación activa:\nLat: {latitud:.4f}, Lon: {longitud:.4f}")
+else:
+    st.sidebar.info("Ubicación no obtenida.")
+
 # 2. Validación de API Key desde los Secrets de Streamlit
 if "GEMINI_API_KEY" not in st.secrets:
     st.error("⚠️ No se encontró la clave GEMINI_API_KEY en los Secrets de Streamlit. Por favor confígurala en los ajustes.")
@@ -26,8 +40,8 @@ GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 client = genai.Client(api_key=GEMINI_API_KEY)
 MODELO_NOMBRE = "gemini-flash-latest"
 
-# 3. Instrucción del Sistema
-SYSTEM_INSTRUCTION = """
+# 3. Instrucción del Sistema Base
+SYSTEM_INSTRUCTION_BASE = """
 Eres un asistente conversacional reflexivo especializado en Inteligencia Computacional y soporte intrapersonal.
 Proceso de NLU: Analiza implícitamente la emoción, la intención y los conceptos clave del usuario en cada mensaje.
 
@@ -60,8 +74,13 @@ if prompt := st.chat_input("Escribe tu mensaje..."):
         role = "user" if msg["role"] == "user" else "model"
         contents.append({"role": role, "parts": [{"text": msg["content"]}]})
 
+    # Si hay GPS activo, se le pasa la información de coordenadas a la instrucción del sistema
+    system_instruction_actual = SYSTEM_INSTRUCTION_BASE
+    if latitud and longitud:
+        system_instruction_actual += f"\n\n[Ubicación GPS actual del usuario: Latitud {latitud}, Longitud {longitud}]"
+
     config = types.GenerateContentConfig(
-        system_instruction=SYSTEM_INSTRUCTION,
+        system_instruction=system_instruction_actual,
         temperature=0.7
     )
 
