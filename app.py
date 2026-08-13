@@ -15,7 +15,7 @@ st.title("💻 ChatBot Pensamiento Computacional - FACET")
 st.markdown("""
 ### 🧠 Asistente diario
 **Desarrollado por:** Matteo, Lizárraga y Ruiz  
-*Modelo activo:* `gemini-2.5-flash`
+*Modelo activo:* `gemini-3.6-flash`
 
 """)
 
