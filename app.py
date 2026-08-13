@@ -4,19 +4,17 @@ from google.genai import types
 
 # 1. Configuración de la página
 st.set_page_config(
-    page_title="ChatBot Pensamiento Computacional - FACET",
+    page_title="ChatBot IC-FACET",
     page_icon="💻",
     layout="centered"
 )
 
 st.title("💻 ChatBot Pensamiento Computacional - FACET")
 st.markdown("""
-### 🧠 Asistente Conversacional e Intrapersonal
+### 🧠 Asistente diario
 **Desarrollado por:** Matteo, Lizárraga y Ruiz  
 *Modelo activo:* `gemini-flash-latest`
 
----
-*Espacio diseñado para descomponer problemas complejos, organizar ideas y fomentar la introspección.*
 """)
 
 # 2. Validación de API Key desde los Secrets de Streamlit
@@ -30,7 +28,7 @@ MODELO_NOMBRE = "gemini-flash-latest"
 
 # 3. Instrucción del Sistema
 SYSTEM_INSTRUCTION = """
-Eres un asistente conversacional reflexivo especializado en Pensamiento Computacional y soporte intrapersonal.
+Eres un asistente conversacional reflexivo especializado en Inteligencia Computacional y soporte intrapersonal.
 Proceso de NLU: Analiza implícitamente la emoción, la intención y los conceptos clave del usuario en cada mensaje.
 
 Instrucciones de comportamiento:
