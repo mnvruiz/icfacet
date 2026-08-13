@@ -1,34 +1,38 @@
-import streamlit as st
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@gradio/lite"></script>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+  <gradio-lite>
+    <!-- Declaración de librerías Python necesarias para la ejecución client-side -->
+    <gradio-requirements>
+google-genai
+    </gradio-requirements>
+
+    <gradio-file name="app.py">
+import os
+import gradio as gr
 from google import genai
 from google.genai import types
 
-# 1. Configuración de la página
-st.set_page_config(
-    page_title="ChatBot IC-FACET",
-    page_icon="💻",
-    layout="centered"
-)
+# 1. Configuración de la API Key (Pega tu clave aquí)
+GEMINI_API_KEY = ""
 
-st.title("💻 ChatBot Pensamiento Computacional - FACET")
-st.markdown("""
-### 🧠 Asistente diario
-**Desarrollado por:** Matteo, Lizárraga y Ruiz  
-*Modelo activo:* `gemini-flash-latest`
+# Inicialización del cliente
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+MODELO_NOMBRE = "gemini-1.5-flash"
 
-""")
-
-# 2. Validación de API Key desde los Secrets de Streamlit
-if "GEMINI_API_KEY" not in st.secrets:
-    st.error("⚠️ No se encontró la clave GEMINI_API_KEY en los Secrets de Streamlit. Por favor confígurala en los ajustes.")
-    st.stop()
-
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-client = genai.Client(api_key=GEMINI_API_KEY)
-MODELO_NOMBRE = "gemini-flash-latest"
-
-# 3. Instrucción del Sistema
+# 2. Instrucción del Sistema
 SYSTEM_INSTRUCTION = """
-Eres un asistente conversacional reflexivo especializado en Inteligencia Computacional y soporte intrapersonal.
+Eres un asistente conversacional reflexivo especializado en Pensamiento Computacional y soporte intrapersonal.
 Proceso de NLU: Analiza implícitamente la emoción, la intención y los conceptos clave del usuario en cada mensaje.
 
 Instrucciones de comportamiento:
@@ -38,47 +42,65 @@ Instrucciones de comportamiento:
 4. BREVEDAD: Intenta responder de forma concisa y directa para favorecer la fluidez, pero asegúrate de desarrollar la idea completa sin cortar información.
 """
 
-# 4. Inicialización del historial de chat en la sesión
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+def responder(mensaje, historial):
+    if not GEMINI_API_KEY:
+        yield "⚠️ Por favor, ingresa tu GEMINI_API_KEY en la variable del código `app.py`."
+        return
 
-# Mostrar mensajes previos del historial
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    try:
+        contents = []
 
-# 5. Entrada del usuario y generación de respuesta
-if prompt := st.chat_input("Escribe tu mensaje..."):
-    # Guardar y mostrar el mensaje del usuario
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+        # Reconstruir el historial de mensajes
+        for item in historial:
+            if isinstance(item, dict):
+                role = "user" if item.get("role") == "user" else "model"
+                texto = item.get("content", "")
+                if texto:
+                    contents.append({"role": role, "parts": [{"text": str(texto)}]})
+            elif isinstance(item, (list, tuple)) and len(item) == 2:
+                u_msg, b_msg = item[0], item[1]
+                if u_msg:
+                    contents.append({"role": "user", "parts": [{"text": str(u_msg)}]})
+                if b_msg:
+                    contents.append({"role": "model", "parts": [{"text": str(b_msg)}]})
 
-    # Reconstruir el formato de historial que espera Gemini
-    contents = []
-    for msg in st.session_state.messages:
-        role = "user" if msg["role"] == "user" else "model"
-        contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+        contents.append({"role": "user", "parts": [{"text": str(mensaje)}]})
 
-    config = types.GenerateContentConfig(
-        system_instruction=SYSTEM_INSTRUCTION,
-        temperature=0.7
-    )
+        # Configuración de generación
+        config = types.GenerateContentConfig(
+            system_instruction=SYSTEM_INSTRUCTION,
+            temperature=0.7
+        )
 
-    # Respuesta en streaming
-    with st.chat_message("assistant"):
-        def response_generator():
-            response_stream = client.models.generate_content_stream(
-                model=MODELO_NOMBRE,
-                contents=contents,
-                config=config
-            )
-            for chunk in response_stream:
-                if chunk.text:
-                    yield chunk.text
+        # Generación por streaming
+        response_stream = client.models.generate_content_stream(
+            model=MODELO_NOMBRE,
+            contents=contents,
+            config=config
+        )
 
-        # Escribe en la pantalla a medida que recibe las palabras
-        full_response = st.write_stream(response_generator())
+        texto_acumulado = ""
+        for chunk in response_stream:
+            if chunk.text:
+                texto_acumulado += chunk.text
+                yield texto_acumulado
 
-    # Guardar la respuesta completa en el historial
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    except Exception as e:
+        yield f"⚠️ Error en la conversación: {str(e)}"
+
+# 3. Interfaz de Gradio
+demo = gr.ChatInterface(
+    fn=responder,
+    title="💻 ChatBot Pensamiento Computacional - FACET",
+    description=f"""
+    ### 🧠 Asistente Conversacional e Intrapersonal
+    **Desarrollado por:** Matteo, Lizárraga y Ruiz  
+    *Modelo activo:* `{MODELO_NOMBRE}`
+    """
+)
+
+demo.launch()
+    </gradio-file>
+  </gradio-lite>
+</body>
+</html>
