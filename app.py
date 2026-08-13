@@ -11,16 +11,16 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("💻 ChatBot Pensamiento Computacional - FACET")
+st.title("💻 ChatBot Inteligencia Computacional - FACET")
 st.markdown("""
 ### 🧠 Asistente diario
-**Desarrollado por:** Matteo, Lizárraga y Ruiz  
+**Desarrollado por:** Lizárraga, Matteo y Ruiz  
 *Modelo activo:* `gemini-3.5-flash`
 
 """)
 
 # 2. Captura de ubicación GPS en la barra lateral
-st.sidebar.header("📍 Ubicación GPS")
+st.sidebar.header("Ubicación GPS")
 st.sidebar.write("Haz clic para compartir tu ubicación:")
 location = streamlit_geolocation()
 
