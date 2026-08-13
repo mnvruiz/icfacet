@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 from streamlit_geolocation import streamlit_geolocation
+from geopy.geocoders import Nominatim
 
 # 1. Configuración de la página
 st.set_page_config(
@@ -38,9 +39,22 @@ with col_mic:
     with st.popover("🎙️ Dictado / Audio"):
         audio_grabado = st.audio_input("Graba una nota de voz")
 
-# Mensaje de estado de las entradas
+# Traducir coordenadas a dirección real automáticamente
+direccion_detectada = None
 if latitud and longitud:
-    st.success(f"📍 **Ubicación activa:** Lat {latitud:.4f}, Lon {longitud:.4f}")
+    try:
+        geolocator = Nominatim(user_agent="icfacet_app")
+        location_info = geolocator.reverse((latitud, longitud), timeout=5)
+        if location_info:
+            direccion_detectada = location_info.address
+    except Exception:
+        direccion_detectada = None
+
+# Mensaje de estado
+if direccion_detectada:
+    st.success(f"📍 **Ubicación exacta:** {direccion_detectada}")
+elif latitud and longitud:
+    st.success(f"📍 **Ubicación GPS:** Lat {latitud:.4f}, Lon {longitud:.4f}")
 else:
     st.info("💡 Puedes compartir tu **GPS (⌖)**, tomar una **Foto (📸)** o grabar **Audio (🎙️)** desde los botones superiores.")
     
