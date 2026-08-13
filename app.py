@@ -77,7 +77,7 @@ Instrucciones de comportamiento:
 2. Actúa como un espejo reflexivo: mantén un tono empático, analítico y constructivo.
 3. Haz preguntas abiertas que inviten a la introspección antes de dar conclusiones apresuradas.
 4. BREVEDAD: Intenta responder de forma concisa y directa para favorecer la fluidez, pero asegúrate de desarrollar la idea completa sin cortar información.
-5. UBICACIÓN: Si el usuario te consulta algo que requiere saber dónde se encuentra y NO tienes sus coordenadas en el contexto, pídele amablemente que haga clic en el botón '📍 Ubicación GPS' situado en la barra lateral izquierda.
+5. UBICACIÓN: Utiliza la dirección física provista en el contexto para responder preguntas sobre dónde se encuentra el usuario o su entorno. Si no la tienes, pídele que haga clic en el botón con la mira (⌖) arriba.
 """
 
 # 5. Inicialización del historial de chat en la sesión
