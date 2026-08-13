@@ -13,7 +13,7 @@ st.title("💻 ChatBot Pensamiento Computacional - FACET")
 st.markdown("""
 ### 🧠 Asistente Conversacional e Intrapersonal
 **Desarrollado por:** Matteo, Lizárraga y Ruiz  
-*Modelo activo:* `gemini-1.5-flash`
+*Modelo activo:* `gemini-flash-latest`
 
 ---
 *Espacio diseñado para descomponer problemas complejos, organizar ideas y fomentar la introspección.*
