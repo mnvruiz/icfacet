@@ -144,10 +144,12 @@ if prompt or foto_capturada or audio_grabado:
 
     # Inyectar GPS en las instrucciones
     system_instruction_actual = SYSTEM_INSTRUCTION_BASE
-    if latitud and longitud:
-        system_instruction_actual += f"\n\n[INFORMACIÓN DE CONTEXTO REAL: La ubicación GPS del usuario es Latitud {latitud}, Longitud {longitud}]."
+    if direccion_detectada:
+        system_instruction_actual += f"\n\n[CONTEXTO GEOGRÁFICO REAL: El usuario se encuentra físicamente en la siguiente dirección: '{direccion_detectada}' (Coordenadas: Lat {latitud}, Lon {longitud})]."
+    elif latitud and longitud:
+        system_instruction_actual += f"\n\n[CONTEXTO GEOGRÁFICO REAL: Coordenadas GPS del usuario: Latitud {latitud}, Longitud {longitud}]."
     else:
-        system_instruction_actual += "\n\n[INFORMACIÓN DE CONTEXTO: El usuario aún NO ha compartido su ubicación GPS]."
+        system_instruction_actual += "\n\n[CONTEXTO GEOGRÁFICO: El usuario aún NO ha compartido su ubicación GPS]."
 
     config = types.GenerateContentConfig(
         system_instruction=system_instruction_actual,
