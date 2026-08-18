@@ -5,6 +5,8 @@ from google.genai.errors import APIError
 from streamlit_geolocation import streamlit_geolocation
 from geopy.geocoders import Nominatim
 
+#HOLA MUNDIS
+
 # 1. Configuración de la página
 st.set_page_config(
     page_title="ChatBot IC-FACET",
